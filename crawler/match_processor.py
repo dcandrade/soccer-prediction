@@ -71,5 +71,6 @@ def get_arbiter(match_page):
 def get_cards(match_page):
     pass
 
+
 def get_players(match_page):
     pass

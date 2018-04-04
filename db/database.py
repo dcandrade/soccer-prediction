@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 
-DBNAME = 'brazilian-championship-prediction'
+DB_NAME = 'brazilian-championship-prediction'
 MATCHES_COLLECTION_NAME = 'matches'
 CLASSIFICATION_HISTORY_COLLECTION_NAME = 'classification_history'
 
@@ -8,7 +8,7 @@ CLASSIFICATION_HISTORY_COLLECTION_NAME = 'classification_history'
 class DAO:
     def __init__(self):
         client = MongoClient()
-        db = client[DBNAME]
+        db = client[DB_NAME]
         self.matches_collection = db[MATCHES_COLLECTION_NAME]
         self.classification_history = db[CLASSIFICATION_HISTORY_COLLECTION_NAME]
 

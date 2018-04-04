@@ -46,7 +46,6 @@ class FutpediaCrawler:
         for match_link in self.matches:
             browser.get(match_link)
 
-
     def run(self):
         print('Crawling process started')
         while self.navigator.has_next_year():
