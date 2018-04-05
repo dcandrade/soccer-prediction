@@ -9,7 +9,7 @@ MAX_YEAR = 2018
 
 class Navigator:
     def __init__(self):
-        self._current_year = 2003
+        self._current_year = MIN_YEAR
         self._current_round = 38
         options = Options()
         options.add_argument("--headless")
