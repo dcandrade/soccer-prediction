@@ -1,3 +1,5 @@
+from collections import ChainMap
+from crawler import match_processor as mp
 from db.database import DAO
 from crawler.navigation import Navigator
 
@@ -9,7 +11,7 @@ CLASSIFICATION_TABLE_XPATH = '//*[@id="edicao-campeonato-classificacao"]/div/div
 class FutpediaCrawler:
     def __init__(self):
         self.navigator = Navigator()
-        self.browser = self.navigator.get_browser()
+        self.browser = self.navigator.browser
         self.matches = []
         self.dao = DAO()
 
@@ -25,18 +27,18 @@ class FutpediaCrawler:
 
         for entry in entries:
             round_result = {
-                'ano': self.navigator.current_year,
-                'rodada': self.navigator.current_round,
-                'time': entry.find_element_by_css_selector('.time').text,
-                'pontos': int(entry.find_element_by_css_selector('.coluna-p').text),
-                'jogos': int(entry.find_element_by_css_selector('.coluna-j').text),
-                'vitorias': int(entry.find_element_by_css_selector('.coluna-v').text),
-                'empates': int(entry.find_element_by_css_selector('.coluna-e').text),
-                'derrotas': int(entry.find_element_by_css_selector('.coluna-d').text),
-                'gp': int(entry.find_element_by_css_selector('.coluna-gp').text),
-                'gc': int(entry.find_element_by_css_selector('.coluna-gc').text),
-                'sg': int(entry.find_element_by_css_selector('.coluna-sg').text),
-                'aproveitamento': float(entry.find_element_by_css_selector('.coluna-a').text)
+                'year': self.navigator.current_year,
+                'round': self.navigator.current_round,
+                'team': entry.find_element_by_css_selector('.time').text,
+                'points': int(entry.find_element_by_css_selector('.coluna-p div').get_property('innerHTML')),
+                'num_matches': int(entry.find_element_by_css_selector('.coluna-j div').get_property('innerHTML')),
+                'num_wins': int(entry.find_element_by_css_selector('.coluna-v div').get_property('innerHTML')),
+                'num_draws': int(entry.find_element_by_css_selector('.coluna-e div').get_property('innerHTML')),
+                'num_defeats': int(entry.find_element_by_css_selector('.coluna-d div').get_property('innerHTML')),
+                'gp': int(entry.find_element_by_css_selector('.coluna-gp div').get_property('innerHTML')),
+                'gc': int(entry.find_element_by_css_selector('.coluna-gc div').get_property('innerHTML')),
+                'sg': int(entry.find_element_by_css_selector('.coluna-sg div').get_property('innerHTML')),
+                'win_rate': float(entry.find_element_by_css_selector('.coluna-a div').get_property('innerHTML'))
 
             }
             self.dao.add_round_classification(round_result)
@@ -45,6 +47,11 @@ class FutpediaCrawler:
         browser = self.navigator.browser
         for match_link in self.matches:
             browser.get(match_link)
+            data = []
+            for operation in mp.get_operations():
+                data.append(operation(browser))
+            match_data = ChainMap(*data)
+            self.dao.add_match(match_data)
 
     def run(self):
         print('Crawling process started')
