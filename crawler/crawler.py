@@ -50,7 +50,7 @@ class FutpediaCrawler:
     def __process_matches(self):
         match_browser = self.match_browser
         for count, match_url in enumerate(self.matches):
-            print("--- Processing match #{} of #{}".format(count+1, len(self.matches)))
+            print("--- Processing match #{} of #{}".format(count + 1, len(self.matches)))
             browser = self.navigator.get_page(match_browser, match_url)
             data = []
 
@@ -83,3 +83,8 @@ class FutpediaCrawler:
             print(self.browser.current_url)
             print(self.match_browser.current_url)
             raise err
+
+
+if __name__ == "__main__":
+    crawler = FutpediaCrawler()
+    crawler.run()
