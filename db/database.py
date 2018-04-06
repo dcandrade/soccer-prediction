@@ -1,8 +1,8 @@
 from pymongo import MongoClient
 
-DB_NAME = 'brazilian-championship-prediction'
+DB_NAME = 'soccer-prediction'
 MATCHES_COLLECTION_NAME = 'matches'
-CLASSIFICATION_HISTORY_COLLECTION_NAME = 'classification_history'
+CLASSIFICATION_HISTORY_COLLECTION_NAME = 'rankings'
 
 
 class DAO:
