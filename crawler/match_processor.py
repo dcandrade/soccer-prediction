@@ -1,10 +1,9 @@
 def get_operations():
     return [
-        get_year_and_match,
+        get_year_and_round,
         get_teams,
         get_score,
         get_schedule,
-        get_round,
         get_location,
         get_statistics,
         get_arbiter,
@@ -13,35 +12,34 @@ def get_operations():
     ]
 
 
-def get_year_and_match(match_page):
+def get_year_and_round(match_page):
     data = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/div[1]/div[1]/a/span').text
     year = int(data[22:26])
-    match_round = int(data[41:43])
+    match_round = int(data[41:42])
 
     return {
         'year': year,
-        'match_round': match_round
+        'round': match_round
     }
 
 
 def get_teams(match_page):
-    home_team = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/h1/a[1]/span[1]').text
-    away_team = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/h1/a[2]/span[1]').text
+    home_team, away_team = match_page.find_elements_by_css_selector('.info-time .font-face')
 
     return {
-        'home': home_team,
-        'away': away_team
+        'home_team': home_team.text,
+        'away_team': away_team.text
     }
 
 
 def get_score(match_page):
-    home_team_score = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/h1/span[1]')
-    away_team_score = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/h1/span[3]')
+    home_team_score = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/h1/span[1]').text
+    away_team_score = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/h1/span[3]').text
 
     return {
         'score': {
-            'home': home_team_score,
-            'away': away_team_score
+            'home_team': int(home_team_score),
+            'away_team': int(away_team_score)
         }
     }
 
@@ -50,6 +48,7 @@ def get_schedule(match_page):
     info = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[2]/div[1]/time').text
     import re
     data = re.split('[,-]', info.strip())
+
     return {
         'schedule': {
             'day': data[0].strip(),
@@ -57,11 +56,6 @@ def get_schedule(match_page):
             'time': data[2].strip()
         }
     }
-
-
-def get_round(match_page):
-    year = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/div[1]/div[1]/a/span/text()').text[-4:]
-    return int(year)
 
 
 def get_location(match_page):
@@ -77,8 +71,11 @@ def get_location(match_page):
 
 
 def get_statistics(match_page):
-    num_matches = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[2]/div[3]/p/span[1]').text
-    num_matches_same_score = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[2]/div[3]/p/span[2]').text
+    num_matches = match_page.find_element_by_css_selector('.contexto span').get_property('innerHTML')
+    try:
+        num_matches_same_score = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[2]/div[3]/p/span[2]').text
+    except:
+        num_matches_same_score = 0
     num_draws = match_page.find_element_by_xpath('//*[@id="mais-venceu"]/div/div[3]/div[2]/span[1]').text
     num_wins_away_team = match_page.find_element_by_xpath('//*[@id="mais-venceu"]/div/div[2]/div[2]').text
     num_wins_home_team = match_page.find_element_by_xpath('//*[@id="mais-venceu"]/div/div[1]/div[2]').text
@@ -99,33 +96,31 @@ def get_statistics(match_page):
 
 
 def get_arbiter(match_page):
-    name = match_page.find_element_by_xpath('//*[@id="ficha-jogo"]/div[5]/div/div/span[1]').text
-    birth = match_page.find_element_by_xpath('//*[@id="ficha-jogo"]/div[5]/div/div/span[2]').text
-    birthdate, birthplace = birth.split('|')
+    name = match_page.find_element_by_css_selector('.nome-juiz').get_property('innerHTML')
 
     return {
-        'arbiter': {
-            'name': name,
-            'birthdate': birthdate.strip(),
-            'birthplace': birthplace.strip()
-        }
+        'arbiter': name
     }
 
 
 def get_cards(match_page):
-    card_list = match_page.find_elements_by_css_selector('.jspPane')[1]
-    cards = card_list.find_elements_by_css_selector('li')
-    match_cards = {}
+    cards = match_page.find_elements_by_xpath('//*[@id="scroll-cartoes"]/div/div[1]/ul/li')
+    match_cards = []
 
     for card in cards:
         name = card.find_element_by_css_selector('.jogador').get_attribute('innerHTML')
         team = card.find_element_by_css_selector('.sigla-time').get_attribute('innerHTML')
-        type = ''  # TODO: get card type
-        match_card = {
+        type = 'yellow'
+
+        if 'cartao-CV' in card.get_property('innerHTML'):
+            type = 'red'
+
+        card = {
             'player': name,
-            'type': type
+            'type': type,
+            'team': team
         }
-        match_cards.get(team, []).append(match_card)
+        match_cards.append(card)
 
     return {
         'cards': match_cards
@@ -139,13 +134,13 @@ def get_player_list(match_page):
     away_team_players = match_page.find_elements_by_xpath('//*[@id="escalacao-visitante"]/ul/li')
 
     for home_player, away_player in zip(home_team_players, away_team_players):
-        position, name = home_player.split('\n')
+        position, name = home_player.text.split('\n')
         home_players.append({
             'name': name,
             'position': position
         })
 
-        position, name = away_player.split('\n')
+        position, name = away_player.text.split('\n')
         away_players.append({
             'name': name,
             'position': position
@@ -153,7 +148,7 @@ def get_player_list(match_page):
 
     return {
         'players': {
-            'home': home_players,
-            'away': away_players
+            'home_team': home_players,
+            'away_team': away_players
         }
     }
