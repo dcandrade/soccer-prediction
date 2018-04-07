@@ -6,12 +6,13 @@ BASE_URL = 'http://futpedia.globo.com/campeonato/campeonato-brasileiro/{}'  # mu
 PREVIOUS_ROUND_XPATH = '//*[@id="edicao-campeonato-classificacao"]/div/div[2]/div[1]/div/span[1]'
 MIN_YEAR = 2003
 MAX_YEAR = 2004
+NUM_ROUNDS = 46
 
 
 class Navigator:
     def __init__(self):
         self._current_year = MIN_YEAR
-        self._current_round = 38
+        self._current_round = NUM_ROUNDS
         options = Options()
         options.add_argument("--headless")
         self._browser = webdriver.Chrome(chrome_options=options)
