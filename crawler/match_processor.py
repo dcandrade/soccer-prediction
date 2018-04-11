@@ -1,6 +1,6 @@
 def get_operations():
     return [
-        get_year_and_round,
+        #get_year_and_round,
         get_teams,
         get_score,
         get_schedule,
@@ -8,6 +8,7 @@ def get_operations():
         get_statistics,
         get_arbiter,
         get_cards,
+        get_coaches,
         get_player_list
     ]
 
@@ -24,7 +25,8 @@ def get_year_and_round(match_page):
 
 
 def get_teams(match_page):
-    home_team, away_team = match_page.find_elements_by_css_selector('.info-time .font-face')
+    home_team = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/h1/a[1]/span[1]')
+    away_team = match_page.find_element_by_xpath('//*[@id="jogo"]/div/div[1]/div/h1/a[2]/span[1]')
 
     return {
         'home_team': home_team.text,
@@ -66,6 +68,18 @@ def get_location(match_page):
         'location': {
             'city': city,
             'stadium': stadium
+        }
+    }
+
+
+def get_coaches(match_page):
+    home_team_coach = match_page.find_element_by_xpath('//*[@id="escalacao-mandante"]/div/div/span/span[2]').text
+    away_team_coach = match_page.find_element_by_xpath('//*[@id="escalacao-visitante"]/div/div/span/span[2]').text
+
+    return {
+        'coaches': {
+            'home_team': home_team_coach,
+            'away_team': away_team_coach
         }
     }
 
@@ -134,17 +148,23 @@ def get_player_list(match_page):
     away_team_players = match_page.find_elements_by_xpath('//*[@id="escalacao-visitante"]/ul/li')
 
     for home_player, away_player in zip(home_team_players, away_team_players):
-        position, name = home_player.text.split('\n')
-        home_players.append({
-            'name': name,
-            'position': position
-        })
+        try:
+            position, name = home_player.text.split('\n')
+            home_players.append({
+                'name': name,
+                'position': position
+            })
+        except ValueError:
+            pass
 
-        position, name = away_player.text.split('\n')
-        away_players.append({
-            'name': name,
-            'position': position
-        })
+        try:
+            position, name = away_player.text.split('\n')
+            away_players.append({
+                'name': name,
+                'position': position
+            })
+        except ValueError:
+            pass
 
     return {
         'players': {
