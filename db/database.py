@@ -13,7 +13,7 @@ class DAO:
         self.classification_history = db[CLASSIFICATION_HISTORY_COLLECTION_NAME]
 
     def add_round_classification(self, classification_table):
-        self.classification_history.insert(classification_table)
+        self.classification_history.insert_one(classification_table)
 
     def add_match(self, match):
-        self.matches_collection.insert(match)
+        self.matches_collection.insert_one(match)
