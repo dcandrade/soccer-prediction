@@ -19,44 +19,41 @@ class FutpediaCrawler:
 
     def __collect_links_to_matches(self):
         self.matches.clear()
-        round_results = self.browser.find_elements_by_xpath('//*[@id="lista-jogos"]/ul/li')
-        for match in round_results:
-            match_link = match.find_element_by_tag_name('a').get_property('href')
-            self.matches.append(match_link)
+        if self.navigator.current_year < 2016:
+            round_results = self.browser.find_elements_by_xpath('//*[@id="lista-jogos"]/ul/li')
+            for match in round_results:
+                match_link = match.find_element_by_tag_name('a').get_property('href')
+                self.matches.append(match_link)
+        else:
+            base_url = "http://futpedia.globo.com"
+            round_results = self.browser.find_element_by_xpath('//*[@id="edicao-campeonato"]/div[2]/div')
 
-    def __import_round_classification(self):
-        classification_table = self.browser.find_element_by_xpath(CLASSIFICATION_TABLE_XPATH)
-        entries = classification_table.find_elements_by_css_selector('tr')
+            raw_js_data = round_results.find_element_by_css_selector('script')
+            raw_js_data = raw_js_data.get_property('innerHTML').replace('\n', '').strip()
+            begin = raw_js_data.find('JOGOS: ') + len('JOGOS: ')
+            end = raw_js_data.find('EQUIPES') - 2
 
-        for entry in entries:
-            round_result = {
-                'year': self.navigator.current_year,
-                'round': self.navigator.current_round,
-                'team': entry.find_element_by_css_selector('.time').get_property('innerHTML'),
-                'points': int(entry.find_element_by_css_selector('.coluna-p div').get_property('innerHTML')),
-                'num_matches': int(entry.find_element_by_css_selector('.coluna-j div').get_property('innerHTML')),
-                'num_wins': int(entry.find_element_by_css_selector('.coluna-v div').get_property('innerHTML')),
-                'num_draws': int(entry.find_element_by_css_selector('.coluna-e div').get_property('innerHTML')),
-                'num_defeats': int(entry.find_element_by_css_selector('.coluna-d div').get_property('innerHTML')),
-                'gp': int(entry.find_element_by_css_selector('.coluna-gp div').get_property('innerHTML')),
-                'gc': int(entry.find_element_by_css_selector('.coluna-gc div').get_property('innerHTML')),
-                'sg': int(entry.find_element_by_css_selector('.coluna-sg div').get_property('innerHTML')),
-                'win_rate': float(entry.find_element_by_css_selector('.coluna-a div').get_property('innerHTML'))
+            raw_data = raw_js_data[begin:end].strip()[:-1]
 
-            }
-            self.dao.add_round_classification(round_result)
+            import json
+            data = json.loads(raw_data)
+            for game in data:
+                self.matches.append(base_url + game['url'])
+            self.matches.reverse()
 
     def __process_matches(self):
         match_browser = self.__match_browser
 
         for count, match_url in enumerate(self.matches):
+            if count < 260:
+                continue
             len_round = len(self.matches) / self.navigator.NUM_ROUNDS
             match_round = int(count / len_round) + 1
             print("--- Processing match #{} of #{} : Round {} ".format(count + 1, len(self.matches), match_round))
             match_browser = self.navigator.get_page(match_browser, match_url)
             data = []
 
-            for operation in mp.get_operations():
+            for operation in mp.get_operations(self.navigator.current_year):
                 data.append(operation(match_browser))
 
             match_data = {
@@ -67,7 +64,6 @@ class FutpediaCrawler:
 
             for info in data:
                 match_data.update(info)
-            print("home: {}, {}".format(match_data['home_team'], match_url))
             self.dao.add_match(match_data)
 
     def run(self):

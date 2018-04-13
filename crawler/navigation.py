@@ -2,10 +2,10 @@ from time import sleep
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-BASE_URL = 'http://futpedia.globo.com/campeonato/campeonato-brasileiro/{}'  # mudar ano p/ 2003
+BASE_URL = 'http://futpedia.globo.com/campeonato/campeonato-brasileiro/{}'
 PREVIOUS_ROUND_XPATH = '//*[@id="edicao-campeonato-classificacao"]/div/div[2]/div[1]/div/span[1]'
-MIN_YEAR = 2013
-MAX_YEAR = 2014
+MIN_YEAR = 2003
+MAX_YEAR = 2018
 
 
 class Navigator:
@@ -14,18 +14,39 @@ class Navigator:
         options = Options()
         options.add_argument("--headless")
         self._browser = webdriver.Chrome(chrome_options=options)
-        self._browser = self.get_page(self.browser, BASE_URL.format(self._current_year))
+        if self._current_year > 2016 or self._current_year == 2013:
+            year_tag = str(self._current_year) + '-' + str(self._current_year)
+            self.get_page(self._browser, BASE_URL.format(year_tag))
+        else:
+            self.get_page(self._browser, BASE_URL.format(self._current_year))
         self.NUM_ROUNDS = self.__get_num_max_rounds()
-        self._current_round = self.NUM_ROUNDS
-
 
     def __get_num_max_rounds(self):
-        url = "http://futpedia.globo.com/campeonato/campeonato-brasileiro/{}".format(self.current_year)
-        self._browser.get(url)
-        num_rounds_xpath = '//*[@id="edicao-campeonato-classificacao"]/div/div[2]/div[1]/div/span[2]/span'
-        data = self._browser.find_element_by_xpath(num_rounds_xpath).text
+        if self._current_year < 2016:
+            url = "http://futpedia.globo.com/campeonato/campeonato-brasileiro/{}".format(self.current_year)
+            self._browser.get(url)
+            num_rounds_xpath = '//*[@id="edicao-campeonato-classificacao"]/div/div[2]/div[1]/div/span[2]/span'
+            data = self._browser.find_element_by_xpath(num_rounds_xpath).text
 
-        return int(data[0:2])
+            return int(data[0:2])
+
+        else:
+            round_results = self.browser.find_element_by_xpath('//*[@id="edicao-campeonato"]/div[2]/div')
+
+            raw_js_data = round_results.find_element_by_css_selector('script')
+            raw_js_data = raw_js_data.get_property('innerHTML').replace('\n', '').strip()
+            begin = raw_js_data.find('JOGOS: ') + len('JOGOS: ')
+            end = raw_js_data.find('EQUIPES') - 2
+
+            raw_data = raw_js_data[begin:end].strip()[:-1]
+
+            import json
+            data = json.loads(raw_data)
+            rounds = []
+            for game in data:
+                rounds.append(game['rod'])
+
+            return max(rounds)
 
     @property
     def browser(self):
@@ -48,17 +69,13 @@ class Navigator:
         except:
             return True
 
-    def to_next_round(self):
-        self._browser.find_element_by_xpath(PREVIOUS_ROUND_XPATH).click()
-        self._current_round -= 1
-
-    def has_next_round(self):
-        return self._current_round > 0
-
     def to_next_year(self):
         self._current_year += 1
-        self._current_round = self.NUM_ROUNDS
-        self._browser.get(BASE_URL.format(self._current_year))
+        if self._current_year > 2016 or self._current_year == 2013:
+            year_tag = str(self._current_year) + '-' + str(self._current_year)
+            self._browser.get(BASE_URL.format(year_tag))
+        else:
+            self._browser.get(BASE_URL.format(self._current_year))
 
     def has_next_year(self):
         return self._current_year < MAX_YEAR
@@ -66,10 +83,6 @@ class Navigator:
     @property
     def current_year(self):
         return self._current_year
-
-    @property
-    def current_round(self):
-        return self._current_round
 
     def quit(self):
         self._browser.quit()

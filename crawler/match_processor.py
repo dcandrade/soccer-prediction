@@ -1,16 +1,27 @@
-def get_operations():
-    return [
-        #get_year_and_round,
-        get_teams,
-        get_score,
-        get_schedule,
-        get_location,
-        get_statistics,
-        get_arbiter,
-        get_cards,
-        get_coaches,
-        get_player_list
-    ]
+def get_operations(year):
+    if year < 2016:
+        return [
+            get_teams,
+            get_score,
+            get_schedule,
+            get_location,
+            get_statistics,
+            get_arbiter,
+            get_cards,
+            get_coaches,
+            get_player_list
+        ]
+    else:
+        return [
+            get_teams,
+            get_score,
+            get_schedule,
+            get_location,
+            get_statistics,
+            get_cards,
+            get_coaches,
+            get_player_list
+        ]
 
 
 def get_year_and_round(match_page):
