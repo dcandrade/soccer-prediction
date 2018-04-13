@@ -45,8 +45,6 @@ class FutpediaCrawler:
         match_browser = self.__match_browser
 
         for count, match_url in enumerate(self.matches):
-            if count < 260:
-                continue
             len_round = len(self.matches) / self.navigator.NUM_ROUNDS
             match_round = int(count / len_round) + 1
             print("--- Processing match #{} of #{} : Round {} ".format(count + 1, len(self.matches), match_round))
